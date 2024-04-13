@@ -276,6 +276,52 @@ class SunPowerPVSupervisorCollector(object):
             dict(key="tot_pf_rto", metric=power_factor),
         ]
 
+    def power_meter_metrics_consumption(self):
+        """
+        Return a list of metrics for the Power Meter modules
+        """
+        labels = PowerMeterLabels._fields
+
+        grid_current_1 = GaugeMetricFamily(
+            name="sunpower_pvs_power_meter_grid_current_1",
+            documentation="Grid Current 1",
+            labels=labels,
+            unit="amperes",
+        )
+        grid_current_2 = GaugeMetricFamily(
+            name="sunpower_pvs_power_meter_grid_current_2",
+            documentation="Grid Current 2",
+            labels=labels,
+            unit="amperes",
+        )
+        grid_voltage_1 = GaugeMetricFamily(
+            name="sunpower_pvs_inverter_ac_voltage_1",
+            documentation="AC Voltage 1",
+            labels=labels,
+            unit="volts",
+        )
+        grid_voltage_2 = GaugeMetricFamily(
+            name="sunpower_pvs_inverter_ac_voltage_2",
+            documentation="AC Voltage 2",
+            labels=labels,
+            unit="volts",
+        )
+        grid_voltage_c = GaugeMetricFamily(
+            name="sunpower_pvs_inverter_ac_voltage_c",
+            documentation="AC Voltage combined",
+            labels=labels,
+            unit="volts",
+        )
+
+        return [
+            dict(key="i1_a", metric=grid_current_1),
+            dict(key="i2_a", metric=grid_current_2),
+            dict(key="v1n_v", metric=grid_voltage_1),
+            dict(key="v2n_v", metric=grid_voltage_2),
+            dict(key="v12_v", metric=grid_voltage_c),
+        ]
+
+
     def supervisor_metrics(self):
         """
         Return a list of metrics for the Supervisor modules
@@ -408,6 +454,7 @@ class SunPowerPVSupervisorCollector(object):
         info_metrics = self.info_metrics()
         supervisor_metrics = self.supervisor_metrics()
         pm_metrics = self.power_meter_metrics()
+        pm_metrics_consumption = self.power_meter_metrics_consumption()
         inverter_metrics = self.inverter_metrics()
         device_state_metrics = self.device_state_metrics()
 
@@ -447,7 +494,10 @@ class SunPowerPVSupervisorCollector(object):
                     ct_rated_current=rated_current,
                     software_version=device["SWVER"],
                 )
-                metrics = pm_metrics
+                if mode == "production":
+                    metrics = pm_metrics
+                elif mode == "consumption":
+                    metrics = pm_metrics + pm_metrics_consumption
 
             # Inverter
             elif device["DEVICE_TYPE"] == "Inverter":
@@ -505,6 +555,7 @@ class SunPowerPVSupervisorCollector(object):
         for m in info_metrics + \
                  supervisor_metrics + \
                  pm_metrics + \
+                 pm_metrics_consumption + \
                  inverter_metrics + \
                  device_state_metrics:
             yield m["metric"]
