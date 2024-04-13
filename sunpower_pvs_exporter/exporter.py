@@ -7,6 +7,7 @@ import logging
 import time
 from datetime import datetime
 from collections import namedtuple
+from cachetools import cached, TTLCache
 
 import requests
 from prometheus_client.core import GaugeMetricFamily
@@ -71,6 +72,7 @@ class SunPowerPVSupervisorCollector(object):
             port=port
         )
 
+    @cached(cache=TTLCache(maxsize=10, ttl=60))
     def _get(self, command):
         """
         Convenience function to make a request to the PVS supervisor
