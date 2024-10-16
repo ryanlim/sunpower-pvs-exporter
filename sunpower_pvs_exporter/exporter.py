@@ -59,7 +59,7 @@ class SunPowerPVSupervisorCollector(object):
                  hostname="sunpowerconsole.com",
                  port=80,
                  scheme="http",
-                 timeout=(5, 5),
+                 timeout=(15, 15),
                  use_device_data_timestamp=False,
                 ):
         self.session = requests.Session()
